@@ -23,6 +23,21 @@ Result<BufferCleanup> prepare_input_tensors(Method& method) {
   void** inputs = (void**)malloc(num_inputs * sizeof(void*));
 
   for (size_t i = 0; i < num_inputs; i++) {
+    auto tag = method_meta.input_tag(i);
+    if (!tag.ok()) {
+      return tag.error();
+    }
+
+    // Skip valid non-tensor inputs such as ints & floats.
+    switch (tag.get()) {
+      case Tag::Int:
+      case Tag::Double:
+      case Tag::Bool:
+        continue;
+      default:
+        break;
+    }
+
     Result<TensorInfo> tensor_meta = method_meta.input_tensor_meta(i);
     if (!tensor_meta.ok()) {
       ET_LOG(Info, "Skipping non-tensor input %zu", i);
